@@ -32,12 +32,16 @@ module SidekiqProcessKiller
       @memory ||= GetProcessMem.new
     end
 
+    private def silent_mode_msg
+      SidekiqProcessKiller.silent_mode ? " [SILENT]" : ""
+    end
+
     private def log_warn(msg)
-      Sidekiq.logger.warn("[#{LOG_PREFIX}] #{msg}")
+      Sidekiq.logger.warn("[#{LOG_PREFIX}]#{silent_mode_msg} #{msg}")
     end
 
     private def log_info(msg)
-      Sidekiq.logger.info("[#{LOG_PREFIX}] #{msg}")
+      Sidekiq.logger.info("[#{LOG_PREFIX}]#{silent_mode_msg} #{msg}")
     end
 
     private def send_signal(name, pid)
