@@ -14,14 +14,15 @@ module SidekiqProcessKiller
       log_warn("Process #{pid} is currently breaching RSS threshold of #{memory_threshold} with #{memory.mb}")
       log_warn("Sending TERM to #{pid}. Worker: #{worker.class}, JobId: #{job['jid']}, queue: #{queue}")
 
-      ::Process.kill("SIGTERM", pid)
+      send_signal("SIGTERM", pid)
       sleep(SidekiqProcessKiller.shutdown_wait_timeout)
 
       shutdown_signal = SidekiqProcessKiller.shutdown_signal
+
       begin
         ::Process.getpgid(pid)
         log_warn("Forcefully killing #{pid}, with #{shutdown_signal}")
-        ::Process.kill(shutdown_signal, pid)
+        send_signal(shutdown_signal, pid)
       rescue Errno::ESRCH
         log_warn("Process #{pid} killed successfully")
       end
@@ -37,6 +38,12 @@ module SidekiqProcessKiller
 
     private def log_info(msg)
       Sidekiq.logger.info("[#{LOG_PREFIX}] #{msg}")
+    end
+
+    private def send_signal(name, pid)
+      return if SidekiqProcessKiller.silent_mode
+
+      ::Process.kill(name, pid)
     end
   end
 end

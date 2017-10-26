@@ -1,6 +1,6 @@
 # SidekiqProcessKiller
 
-[![Build Status](https://travis-ci.org/shayonj/sidekiq_process_killer.svg?branch=master)](https://travis-ci.org/shayonj/sidekiq_process_killer)
+[![Build Status]( https://travis-ci.org/shayonj/sidekiq_process_killer.svg?branch=master)](https://travis-ci.org/shayonj/sidekiq_process_killer)
 
 When you have memory leaks or "bloats" in your ruby application, identifying and fixing them can at times be a nightmare. Instead, an _"acceptable"_ mitigation is to re-spin the workers. Its a common technique that can be found in [Puma Worker Killer](https://github.com/schneems/puma_worker_killer) or [Unicorn Worker Killer](https://github.com/kzk/unicorn-worker-killer). Though, its neater and good practice to find and fix your leaks.
 
@@ -26,6 +26,7 @@ The default configurations are:
 memory_threshold: 250.0 # mb
 shutdown_wait_timeout: 25 # seconds
 shutdown_signal: "SIGKILL"
+silent_mode: false
 ```
 
 `memory_threshold` is the threshold, which, when, breached, the respective Sidekiq worker will be instructed for termination (via `TERM` signal, which sidekiq gracefully exits).
@@ -39,6 +40,7 @@ SidekiqProcessKiller.config do |con|
   con.memory_threshold = 1024.0
   con.shutdown_wait_timeout = 60
   con.shutdown_signal = "SIGUSR2"
+  con.silent_mode = false
 end
 ```
 
