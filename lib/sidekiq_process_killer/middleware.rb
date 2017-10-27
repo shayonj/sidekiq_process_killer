@@ -1,6 +1,7 @@
 module SidekiqProcessKiller
   class Middleware
     LOG_PREFIX = self.name
+    METRIC_PREFIX = "sidekiq_process_killer".freeze
 
     def call(worker, job, queue)
       pid = ::Process.pid
@@ -23,8 +24,20 @@ module SidekiqProcessKiller
         ::Process.getpgid(pid)
         log_warn("Forcefully killing #{pid}, with #{shutdown_signal}")
         send_signal(shutdown_signal, pid)
+
+        increment_statsd({
+          metric_name: "process.killed.forcefully",
+          worker_name: worker.class,
+          current_memory_usage: memory.mb
+        })
       rescue Errno::ESRCH
         log_warn("Process #{pid} killed successfully")
+
+        increment_statsd({
+          metric_name: "process.killed.successfully",
+          worker_name: worker.class,
+          current_memory_usage: memory.mb
+        })
       end
     end
 
@@ -48,6 +61,14 @@ module SidekiqProcessKiller
       return if SidekiqProcessKiller.silent_mode
 
       ::Process.kill(name, pid)
+    end
+
+    private def increment_statsd(params)
+      statsd_klass = SidekiqProcessKiller.statsd_klass
+      return unless statsd_klass.respond_to?(:increment)
+
+      params[:metric_name] = "#{METRIC_PREFIX}.#{params[:metric_name]}"
+      statsd_klass.increment(params)
     end
   end
 end

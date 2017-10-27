@@ -3,6 +3,7 @@ require "spec_helper"
 RSpec.describe SidekiqProcessKiller::Middleware do
   let(:input) { [double(class: "Foo"), {"jid" => "1234"}, "default"] }
   let(:pid) { 1 }
+  let(:statsd_klass) { double(increment: nil) }
 
   after(:each) do
     SidekiqProcessKiller.config do |con|
@@ -10,6 +11,7 @@ RSpec.describe SidekiqProcessKiller::Middleware do
       con.shutdown_wait_timeout = 25
       con.silent_mode = false
       con.shutdown_signal = "SIGKILL"
+      con.statsd_klass = nil
     end
   end
 
@@ -33,6 +35,7 @@ RSpec.describe SidekiqProcessKiller::Middleware do
     SidekiqProcessKiller.config do |con|
       con.shutdown_wait_timeout = 1
       con.shutdown_signal = "SIGKILL"
+      con.statsd_klass = statsd_klass
     end
 
     allow_any_instance_of(GetProcessMem).to receive(:mb).and_return(4000.0)
@@ -41,6 +44,12 @@ RSpec.describe SidekiqProcessKiller::Middleware do
     expect(::Process).to receive(:kill).with("SIGTERM", 1)
     expect(::Process).to receive(:getpgid).with(pid)
     expect(::Process).to receive(:kill).with("SIGKILL", 1)
+
+    expect(statsd_klass).to receive(:increment).with({
+      metric_name: "sidekiq_process_killer.process.killed.forcefully",
+      worker_name: String,
+      current_memory_usage: 4000.0
+    })
 
     SidekiqProcessKiller::Middleware.new.call(*input) do
       # do something
@@ -76,6 +85,30 @@ RSpec.describe SidekiqProcessKiller::Middleware do
     expect(::Process).to_not receive(:kill)
 
     SidekiqProcessKiller::Middleware.new.call(*input) do
+      # do something
+    end
+  end
+
+  it "sends statsd metrics by incrementing, using the supplied statsd class object" do
+    SidekiqProcessKiller.config do |con|
+      con.shutdown_wait_timeout = 1
+      con.statsd_klass = statsd_klass
+    end
+
+    allow_any_instance_of(GetProcessMem).to receive(:mb).and_return(4000.0)
+    allow(::Process).to receive(:pid).and_return(pid)
+
+    expect(::Process).to receive(:kill).with("SIGTERM", 1)
+    expect(::Process).to receive(:getpgid).with(pid).and_raise(Errno::ESRCH)
+    expect(::Process).to_not receive(:kill).with("SIGKILL", 1)
+
+    expect(statsd_klass).to receive(:increment).with({
+      metric_name: "sidekiq_process_killer.process.killed.successfully",
+      worker_name: String,
+      current_memory_usage: 4000.0
+    })
+
+    SidekiqProcessKiller::Middleware.new.call("some_worker", {}, "") do
       # do something
     end
   end
