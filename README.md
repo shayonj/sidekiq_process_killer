@@ -27,22 +27,40 @@ memory_threshold: 250.0 # mb
 shutdown_wait_timeout: 25 # seconds
 shutdown_signal: "SIGKILL"
 silent_mode: false
+statsd_klass: nil
 ```
 
-`silent_mode` when set to `true` will mean that no signals for terminate or otherwise will be sent. This is helpful if you are planning to launch this, but want to first do a dry run.
+- `silent_mode`: When set to `true`, it will mean that no signals for terminate or otherwise will be sent. This is helpful if you are planning to launch this, but want to first do a dry run.
+- `memory_threshold`: This is the threshold, which, when, breached, the respective Sidekiq worker will be instructed for termination (via `TERM` signal, which sidekiq gracefully exits).
+- `shutdown_signal`: Signal for force shutdown/kill/quit.
+- `shutdown_wait_timeout`: If, for some reason, the process takes more than the timeout defined in `shutdown_wait_timeout`, to die, the process will be forced terminated using the signal set in `shutdown_signal`.
+- `statsd_klass`: This is your custom statsd class object which responds to an `increment` function. If present, then it will send custom metrics about the worker process that is being terminated and its respective RSS.
+  - The `increment` is called with a single argument of type `Hash` which contains, `metric_name`, `worker_name` and `current_memory_usage`. The implementation of this may not be very flexible, its expected that your custom class reads the passed in information and appropriately send to your statsd agent. PRs/patches welcome to extend this functionality :).
 
-`memory_threshold` is the threshold, which, when, breached, the respective Sidekiq worker will be instructed for termination (via `TERM` signal, which sidekiq gracefully exits).
-
-If, for some reason, the worker takes more than the timeout defined in `shutdown_wait_timeout`, the worker will be forced terminated using the signal set in `shutdown_signal`.
-
-Updating default configuration can be done as:
+### Updating default configuration:
 
 ```ruby
+class CustomMetric
+  ...
+
+  def increment(params)
+    StatsD.count(
+      params[:metric_name],
+      tags: {
+        worker_name: params[:worker_name]
+      }
+    )
+  end
+
+  ...
+end
+
 SidekiqProcessKiller.config do |con|
   con.memory_threshold = 1024.0
   con.shutdown_wait_timeout = 60
   con.shutdown_signal = "SIGUSR2"
   con.silent_mode = false
+  con.statsd_klass = CustomMetric.new # your custom statsd class object
 end
 ```
 
