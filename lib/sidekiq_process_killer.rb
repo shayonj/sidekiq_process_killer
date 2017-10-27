@@ -1,10 +1,11 @@
 module SidekiqProcessKiller
   extend self
-  attr_accessor :memory_threshold, :shutdown_wait_timeout, :shutdown_signal
+  attr_accessor :memory_threshold, :shutdown_wait_timeout, :shutdown_signal, :silent_mode
 
   self.memory_threshold = 250.0 # mb
   self.shutdown_wait_timeout = 25 # seconds
   self.shutdown_signal = "SIGKILL"
+  self.silent_mode = false
 
   def config
     yield self

@@ -8,6 +8,8 @@ RSpec.describe SidekiqProcessKiller::Middleware do
     SidekiqProcessKiller.config do |con|
       con.memory_threshold = 250.0
       con.shutdown_wait_timeout = 25
+      con.silent_mode = false
+      con.shutdown_signal = "SIGKILL"
     end
   end
 
@@ -30,6 +32,7 @@ RSpec.describe SidekiqProcessKiller::Middleware do
   it "sends SIGTERM when RSS is above threshold and forcefully kills worker when beyond shutdown timeout" do
     SidekiqProcessKiller.config do |con|
       con.shutdown_wait_timeout = 1
+      con.shutdown_signal = "SIGKILL"
     end
 
     allow_any_instance_of(GetProcessMem).to receive(:mb).and_return(4000.0)
@@ -47,6 +50,7 @@ RSpec.describe SidekiqProcessKiller::Middleware do
   it "sends SIGTERM when RSS is above threshold and does not need to forcefully kill worker" do
     SidekiqProcessKiller.config do |con|
       con.shutdown_wait_timeout = 1
+      con.shutdown_signal = "SIGKILL"
     end
 
     allow_any_instance_of(GetProcessMem).to receive(:mb).and_return(4000.0)
@@ -55,6 +59,21 @@ RSpec.describe SidekiqProcessKiller::Middleware do
     expect(::Process).to receive(:kill).with("SIGTERM", 1)
     expect(::Process).to receive(:getpgid).with(pid).and_raise(Errno::ESRCH)
     expect(::Process).to_not receive(:kill).with("SIGKILL", 1)
+
+    SidekiqProcessKiller::Middleware.new.call(*input) do
+      # do something
+    end
+  end
+
+  it "does not need any signal when silent mode is on" do
+    SidekiqProcessKiller.config do |con|
+      con.shutdown_wait_timeout = 1
+      con.silent_mode = true
+    end
+
+    expect(::Process).to_not receive(:kill)
+    expect(::Process).to_not receive(:getpgid)
+    expect(::Process).to_not receive(:kill)
 
     SidekiqProcessKiller::Middleware.new.call(*input) do
       # do something

@@ -26,7 +26,10 @@ The default configurations are:
 memory_threshold: 250.0 # mb
 shutdown_wait_timeout: 25 # seconds
 shutdown_signal: "SIGKILL"
+silent_mode: false
 ```
+
+`silent_mode` when set to `true` will mean that no signals for terminate or otherwise will be sent. This is helpful if you are planning to launch this, but want to first do a dry run.
 
 `memory_threshold` is the threshold, which, when, breached, the respective Sidekiq worker will be instructed for termination (via `TERM` signal, which sidekiq gracefully exits).
 
@@ -39,6 +42,7 @@ SidekiqProcessKiller.config do |con|
   con.memory_threshold = 1024.0
   con.shutdown_wait_timeout = 60
   con.shutdown_signal = "SIGUSR2"
+  con.silent_mode = false
 end
 ```
 

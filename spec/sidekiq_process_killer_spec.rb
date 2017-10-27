@@ -9,6 +9,7 @@ RSpec.describe SidekiqProcessKiller do
     expect(SidekiqProcessKiller.memory_threshold).to eq(250.0)
     expect(SidekiqProcessKiller.shutdown_wait_timeout).to eq(25)
     expect(SidekiqProcessKiller.shutdown_signal).to eq("SIGKILL")
+    expect(SidekiqProcessKiller.silent_mode).to eq(false)
   end
 
   it "successfully updates the config" do
@@ -16,10 +17,12 @@ RSpec.describe SidekiqProcessKiller do
       con.memory_threshold = 1024.0
       con.shutdown_wait_timeout = 60
       con.shutdown_signal = "SIGUSR1"
+      con.silent_mode = true
     end
 
     expect(SidekiqProcessKiller.memory_threshold).to eq(1024.0)
     expect(SidekiqProcessKiller.shutdown_wait_timeout).to eq(60)
     expect(SidekiqProcessKiller.shutdown_signal).to eq("SIGUSR1")
+    expect(SidekiqProcessKiller.silent_mode).to eq(true)
   end
 end
