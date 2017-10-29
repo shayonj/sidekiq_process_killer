@@ -19,6 +19,42 @@ RSpec.describe SidekiqProcessKiller::Middleware do
     expect(SidekiqProcessKiller::Middleware::LOG_PREFIX).to eq("SidekiqProcessKiller::Middleware")
   end
 
+  it "has the attributes set correctly" do
+    allow_any_instance_of(GetProcessMem).to receive(:mb).and_return(10.22)
+    allow(::Process).to receive(:pid).and_return(pid)
+
+    SidekiqProcessKiller.config do |con|
+      con.shutdown_wait_timeout = 1
+    end
+
+    instance = SidekiqProcessKiller::Middleware.new
+    instance.call(*input) do
+      # do something
+    end
+
+    expect(instance.jid).to eq("1234")
+    expect(instance.worker).to eq("Foo")
+    expect(instance.queue).to eq("default")
+    expect(instance.memory).to eq(10.22)
+    expect(instance.pid).to eq(pid)
+  end
+
+  it "successfully turns instance variables into humanized attributes" do
+    allow_any_instance_of(GetProcessMem).to receive(:mb).and_return(10.22)
+    allow(::Process).to receive(:pid).and_return(pid)
+
+    SidekiqProcessKiller.config do |con|
+      con.shutdown_wait_timeout = 1
+    end
+
+    instance = SidekiqProcessKiller::Middleware.new
+    instance.call(*input) do
+      # do something
+    end
+
+    expect(instance.send(:humanized_attributes)).to eq("Pid: 1, Worker: Foo, Queue: default, Memory: 10.22, Jid: 1234")
+  end
+
   it "returns early if there current RSS is below threshold" do
     SidekiqProcessKiller.config do |con|
       con.memory_threshold = 10.0
