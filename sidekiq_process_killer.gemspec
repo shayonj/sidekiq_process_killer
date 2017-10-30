@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
 
   spec.summary       = "Simple process killer for sidekiq to avoid memory leaks and/or bloats"
   spec.description   = "SidekiqProcessKiller plugs into Sidekiq's middleware and kills a process if its processing beyond the supplied RSS threshold. Since, this plugs into the middleware the check is performed after each job."
-  spec.homepage      = "htts://github.com/shayonj/sidekiq_process_killer"
+  spec.homepage      = "https://github.com/shayonj/sidekiq_process_killer"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0").reject do |f|
