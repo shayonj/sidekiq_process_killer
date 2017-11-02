@@ -6,13 +6,13 @@ module SidekiqProcessKiller
     attr_accessor :pid, :worker, :jid, :queue, :memory
 
     def call(worker, job, queue)
+      yield
+
       @pid        = ::Process.pid
       @worker     = worker.class
       @queue      = queue
       @memory     = process_memory.mb
       @jid        = job['jid']
-
-      yield
 
       memory_threshold = SidekiqProcessKiller.memory_threshold
       return if memory_threshold > memory
