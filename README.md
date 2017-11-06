@@ -26,11 +26,11 @@ The default configurations are:
 memory_threshold: 250.0 # mb
 shutdown_wait_timeout: 25 # seconds
 shutdown_signal: "SIGKILL"
-silent_mode: false
+dry_run: false
 statsd_klass: nil
 ```
 
-- `silent_mode`: When set to `true`, it will mean that no signals for terminate or otherwise will be sent. This is helpful if you are planning to launch this, but want to first do a dry run.
+- `dry_run`: When set to `true`, it will mean that no signals for terminate or otherwise will be sent. This is helpful if you are planning to launch this, but want to first do a dry run.
 - `memory_threshold`: This is the threshold, which, when, breached, the respective Sidekiq worker will be instructed for termination (via `TERM` signal, which sidekiq gracefully exits).
 - `shutdown_signal`: Signal for force shutdown/kill/quit.
 - `shutdown_wait_timeout`: If, for some reason, the process takes more than the timeout defined in `shutdown_wait_timeout`, to die, the process will be forced terminated using the signal set in `shutdown_signal`.
@@ -59,7 +59,7 @@ SidekiqProcessKiller.config do |con|
   con.memory_threshold = 1024.0
   con.shutdown_wait_timeout = 60
   con.shutdown_signal = "SIGUSR2"
-  con.silent_mode = false
+  con.dry_run = false
   con.statsd_klass = CustomMetric.new # your custom statsd class object
 end
 ```

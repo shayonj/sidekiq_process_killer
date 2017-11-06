@@ -58,20 +58,21 @@ module SidekiqProcessKiller
       end.join(", ")
     end
 
-    private def silent_mode_msg
-      SidekiqProcessKiller.silent_mode ? " [SILENT]" : ""
+    private def dry_run_msg
+      SidekiqProcessKiller.dry_run ? " [DRY RUN]" : ""
     end
 
     private def log_warn(msg)
-      Sidekiq.logger.warn("[#{LOG_PREFIX}]#{silent_mode_msg} #{msg} #{humanized_attributes}")
+      Sidekiq.logger.warn("[#{LOG_PREFIX}]#{dry_run_msg} #{msg} #{humanized_attributes}")
     end
 
     private def log_info(msg)
-      Sidekiq.logger.info("[#{LOG_PREFIX}]#{silent_mode_msg} #{msg} #{humanized_attributes}")
+      Sidekiq.logger.info("[#{LOG_PREFIX}]#{dry_run_msg} #{msg} #{humanized_attributes}")
     end
 
     private def send_signal(name, pid)
-      return if SidekiqProcessKiller.silent_mode
+      log_warn("DEPRECATION: silent_mode config option will be deprecated. Please use dry_run instead.") if SidekiqProcessKiller.silent_mode
+      return if SidekiqProcessKiller.dry_run || SidekiqProcessKiller.silent_mode
 
       ::Process.kill(name, pid)
     end

@@ -9,7 +9,7 @@ RSpec.describe SidekiqProcessKiller::Middleware do
     SidekiqProcessKiller.config do |con|
       con.memory_threshold = 250.0
       con.shutdown_wait_timeout = 25
-      con.silent_mode = false
+      con.dry_run = false
       con.shutdown_signal = "SIGKILL"
       con.statsd_klass = nil
     end
@@ -110,10 +110,10 @@ RSpec.describe SidekiqProcessKiller::Middleware do
     end
   end
 
-  it "does not need any signal when silent mode is on" do
+  it "does not need any signal when dry run mode is on" do
     SidekiqProcessKiller.config do |con|
       con.shutdown_wait_timeout = 1
-      con.silent_mode = true
+      con.dry_run = true
     end
 
     expect(::Process).to_not receive(:kill)
