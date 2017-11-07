@@ -29,4 +29,30 @@ RSpec.describe SidekiqProcessKiller do
     expect(SidekiqProcessKiller.silent_mode).to eq(true)
     expect(SidekiqProcessKiller.statsd_klass).to eq(object)
   end
+
+  context "memory_threshold=" do
+    it "plays nice when passed in nil" do
+      SidekiqProcessKiller.config do |con|
+        con.memory_threshold = nil
+      end
+
+      expect(SidekiqProcessKiller.memory_threshold).to eq(0.0)
+    end
+
+    it "plays nice when passed in as string" do
+      SidekiqProcessKiller.config do |con|
+        con.memory_threshold = "2048.8656"
+      end
+
+      expect(SidekiqProcessKiller.memory_threshold).to eq(2048.8656)
+    end
+
+    it "plays nice when passed in unexpected value like a hash" do
+      SidekiqProcessKiller.config do |con|
+        con.memory_threshold = {}
+      end
+
+      expect(SidekiqProcessKiller.memory_threshold).to eq(0.0)
+    end
+  end
 end
