@@ -84,7 +84,8 @@ RSpec.describe SidekiqProcessKiller::Middleware do
     expect(statsd_klass).to receive(:increment).with({
       metric_name: "sidekiq_process_killer.process.killed.forcefully",
       worker_name: String,
-      current_memory_usage: 4000.0
+      current_memory_usage: 4000.0,
+      queue_name: "default",
     })
 
     SidekiqProcessKiller::Middleware.new.call(*input) do
@@ -141,10 +142,11 @@ RSpec.describe SidekiqProcessKiller::Middleware do
     expect(statsd_klass).to receive(:increment).with({
       metric_name: "sidekiq_process_killer.process.killed.successfully",
       worker_name: String,
-      current_memory_usage: 4000.0
+      current_memory_usage: 4000.0,
+      queue_name: "priority",
     })
 
-    SidekiqProcessKiller::Middleware.new.call("some_worker", {}, "") do
+    SidekiqProcessKiller::Middleware.new.call("some_worker", {}, "priority") do
       # do something
     end
   end

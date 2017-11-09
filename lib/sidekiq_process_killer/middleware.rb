@@ -25,24 +25,22 @@ module SidekiqProcessKiller
       shutdown_signal = SidekiqProcessKiller.shutdown_signal
 
       begin
+        metric_params = {
+          worker_name: worker.class,
+          current_memory_usage: memory,
+          queue_name: queue,
+        }
+
         ::Process.getpgid(pid)
         log_warn("Forcefully killing process with #{shutdown_signal}.")
 
-        increment_statsd({
-          metric_name: "process.killed.forcefully",
-          worker_name: worker.class,
-          current_memory_usage: memory
-        })
+        increment_statsd(metric_params.merge(metric_name: "process.killed.forcefully"))
 
         send_signal(shutdown_signal, pid)
       rescue Errno::ESRCH
         log_warn("Process killed successfully.")
 
-        increment_statsd({
-          metric_name: "process.killed.successfully",
-          worker_name: worker.class,
-          current_memory_usage: memory
-        })
+        increment_statsd(metric_params.merge(metric_name: "process.killed.successfully"))
       end
     end
 
