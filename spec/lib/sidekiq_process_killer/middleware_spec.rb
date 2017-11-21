@@ -8,9 +8,7 @@ RSpec.describe SidekiqProcessKiller::Middleware do
   after(:each) do
     SidekiqProcessKiller.config do |con|
       con.memory_threshold = 250.0
-      con.shutdown_wait_timeout = 25
       con.silent_mode = false
-      con.shutdown_signal = "SIGKILL"
       con.statsd_klass = nil
     end
   end
@@ -22,10 +20,6 @@ RSpec.describe SidekiqProcessKiller::Middleware do
   it "has the attributes set correctly" do
     allow_any_instance_of(GetProcessMem).to receive(:mb).and_return(10.22)
     allow(::Process).to receive(:pid).and_return(pid)
-
-    SidekiqProcessKiller.config do |con|
-      con.shutdown_wait_timeout = 1
-    end
 
     instance = SidekiqProcessKiller::Middleware.new
     instance.call(*input) do
@@ -42,10 +36,6 @@ RSpec.describe SidekiqProcessKiller::Middleware do
   it "successfully turns instance variables into humanized attributes" do
     allow_any_instance_of(GetProcessMem).to receive(:mb).and_return(10.22)
     allow(::Process).to receive(:pid).and_return(pid)
-
-    SidekiqProcessKiller.config do |con|
-      con.shutdown_wait_timeout = 1
-    end
 
     instance = SidekiqProcessKiller::Middleware.new
     instance.call(*input) do
@@ -69,8 +59,6 @@ RSpec.describe SidekiqProcessKiller::Middleware do
 
   it "sends SIGTERM when RSS is above threshold and forcefully kills worker when beyond shutdown timeout" do
     SidekiqProcessKiller.config do |con|
-      con.shutdown_wait_timeout = 1
-      con.shutdown_signal = "SIGKILL"
       con.statsd_klass = statsd_klass
     end
 
@@ -78,11 +66,9 @@ RSpec.describe SidekiqProcessKiller::Middleware do
     allow(::Process).to receive(:pid).and_return(pid)
 
     expect(::Process).to receive(:kill).with("SIGTERM", 1)
-    expect(::Process).to receive(:getpgid).with(pid)
-    expect(::Process).to receive(:kill).with("SIGKILL", 1)
 
     expect(statsd_klass).to receive(:increment).with({
-      metric_name: "sidekiq_process_killer.process.killed.forcefully",
+      metric_name: "sidekiq_process_killer.process.term.signal.sent",
       worker_name: String,
       current_memory_usage: 4000.0
     })
@@ -92,27 +78,8 @@ RSpec.describe SidekiqProcessKiller::Middleware do
     end
   end
 
-  it "sends SIGTERM when RSS is above threshold and does not need to forcefully kill worker" do
-    SidekiqProcessKiller.config do |con|
-      con.shutdown_wait_timeout = 1
-      con.shutdown_signal = "SIGKILL"
-    end
-
-    allow_any_instance_of(GetProcessMem).to receive(:mb).and_return(4000.0)
-    allow(::Process).to receive(:pid).and_return(pid)
-
-    expect(::Process).to receive(:kill).with("SIGTERM", 1)
-    expect(::Process).to receive(:getpgid).with(pid).and_raise(Errno::ESRCH)
-    expect(::Process).to_not receive(:kill).with("SIGKILL", 1)
-
-    SidekiqProcessKiller::Middleware.new.call(*input) do
-      # do something
-    end
-  end
-
   it "does not need any signal when silent mode is on" do
     SidekiqProcessKiller.config do |con|
-      con.shutdown_wait_timeout = 1
       con.silent_mode = true
     end
 
@@ -127,7 +94,6 @@ RSpec.describe SidekiqProcessKiller::Middleware do
 
   it "sends statsd metrics by incrementing, using the supplied statsd class object" do
     SidekiqProcessKiller.config do |con|
-      con.shutdown_wait_timeout = 1
       con.statsd_klass = statsd_klass
     end
 
@@ -135,11 +101,9 @@ RSpec.describe SidekiqProcessKiller::Middleware do
     allow(::Process).to receive(:pid).and_return(pid)
 
     expect(::Process).to receive(:kill).with("SIGTERM", 1)
-    expect(::Process).to receive(:getpgid).with(pid).and_raise(Errno::ESRCH)
-    expect(::Process).to_not receive(:kill).with("SIGKILL", 1)
 
     expect(statsd_klass).to receive(:increment).with({
-      metric_name: "sidekiq_process_killer.process.killed.successfully",
+      metric_name: "sidekiq_process_killer.process.term.signal.sent",
       worker_name: String,
       current_memory_usage: 4000.0
     })
