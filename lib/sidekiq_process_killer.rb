@@ -1,10 +1,8 @@
 module SidekiqProcessKiller
   extend self
 
-  attr_accessor :shutdown_wait_timeout, :shutdown_signal, :silent_mode, :statsd_klass
+  attr_accessor :silent_mode, :statsd_klass
 
-  self.shutdown_wait_timeout = 25 # seconds
-  self.shutdown_signal = "SIGKILL"
   self.silent_mode = false
   self.statsd_klass = nil
 

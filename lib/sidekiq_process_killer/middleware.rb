@@ -18,32 +18,12 @@ module SidekiqProcessKiller
       return if memory_threshold > memory
 
       log_warn("Breached RSS threshold at #{memory_threshold}. Sending TERM Signal.")
-
+      increment_statsd({
+        metric_name: "process.term.signal.sent",
+        worker_name: worker.class,
+        current_memory_usage: memory
+      })
       send_signal("SIGTERM", pid)
-      sleep(SidekiqProcessKiller.shutdown_wait_timeout)
-
-      shutdown_signal = SidekiqProcessKiller.shutdown_signal
-
-      begin
-        ::Process.getpgid(pid)
-        log_warn("Forcefully killing process with #{shutdown_signal}.")
-
-        increment_statsd({
-          metric_name: "process.killed.forcefully",
-          worker_name: worker.class,
-          current_memory_usage: memory
-        })
-
-        send_signal(shutdown_signal, pid)
-      rescue Errno::ESRCH
-        log_warn("Process killed successfully.")
-
-        increment_statsd({
-          metric_name: "process.killed.successfully",
-          worker_name: worker.class,
-          current_memory_usage: memory
-        })
-      end
     end
 
     private def process_memory
@@ -64,10 +44,6 @@ module SidekiqProcessKiller
 
     private def log_warn(msg)
       Sidekiq.logger.warn("[#{LOG_PREFIX}]#{silent_mode_msg} #{msg} #{humanized_attributes}")
-    end
-
-    private def log_info(msg)
-      Sidekiq.logger.info("[#{LOG_PREFIX}]#{silent_mode_msg} #{msg} #{humanized_attributes}")
     end
 
     private def send_signal(name, pid)
