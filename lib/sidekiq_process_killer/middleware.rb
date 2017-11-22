@@ -17,13 +17,14 @@ module SidekiqProcessKiller
       memory_threshold = SidekiqProcessKiller.memory_threshold
       return if memory_threshold > memory
 
+      send_signal("SIGTERM", pid)
+      sleep 2
       log_warn("Breached RSS threshold at #{memory_threshold}. Sending TERM Signal.")
       increment_statsd({
         metric_name: "process.term.signal.sent",
         worker_name: worker.class,
         current_memory_usage: memory
       })
-      send_signal("SIGTERM", pid)
     end
 
     private def process_memory
