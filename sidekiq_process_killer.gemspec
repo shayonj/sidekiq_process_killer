@@ -26,5 +26,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rspec", "~> 3.0"
 
   spec.add_dependency "get_process_mem", "~> 0.2.1"
-  spec.add_dependency "sidekiq", "~> 5.0.5"
+  spec.add_dependency "sidekiq", "~> 5"
 end
