@@ -8,12 +8,8 @@ SidekiqProcessKiller plugs into Sidekiq's middleware and kills a process (by sen
 
 ## Installation
 
-**While in testing period, this is not published to a public server, yet. Until then:**
-
-Add the following to your Gemfile
-
 ```ruby
-  gem "sidekiq_process_killer", git: "git://github.com/shayonj/sidekiq_process_killer.git"
+  gem "sidekiq_process_killer"
 ```
 
 ## Usage
