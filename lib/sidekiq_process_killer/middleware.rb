@@ -11,7 +11,7 @@ module SidekiqProcessKiller
       @pid        = ::Process.pid
       @worker     = worker.class
       @queue      = queue
-      @memory     = process_memory.mb
+      @memory     = GetProcessMem.new.mb
       @jid        = job['jid']
 
       memory_threshold = SidekiqProcessKiller.memory_threshold
@@ -25,10 +25,6 @@ module SidekiqProcessKiller
         worker_name: worker.class,
         current_memory_usage: memory
       })
-    end
-
-    private def process_memory
-      @memory ||= GetProcessMem.new
     end
 
     private def humanized_attributes
